@@ -66,16 +66,24 @@ pre{white-space:pre-wrap;background:rgba(4,8,24,.85);border:1px solid var(--line
 @media(max-width:860px){.app{grid-template-columns:1fr}.rail{position:static}.stats{grid-template-columns:1fr 1fr}.stats .ringc{grid-column:1/-1}}
 @media print{body{background:#fff;color:#000}.orb,.top,.rail,.tabs,.btn,.link,.dnb,.drawer{display:none}.alt,.sb{display:block}.box{break-inside:avoid;border-color:#999;background:#fff}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style></head><body>
+.hbs{display:flex;gap:8px}.am{position:fixed;inset:0;background:rgba(4,8,24,.75);backdrop-filter:blur(6px);display:none;place-items:center;z-index:40}.am.show{display:grid}
+.mc{background:#0d1535;border:1px solid var(--line);border-radius:18px;padding:26px;width:min(400px,92vw);animation:up .3s both}.mc h2{font-size:26px;margin-bottom:8px}
+.mc input{width:100%;background:rgba(8,14,36,.7);border:1px solid var(--line);border-radius:12px;color:var(--ice);font:inherit;padding:12px 14px;margin-bottom:10px}.mc input:focus{border-color:var(--cy);outline:0}
+.mc .btn{margin-top:4px;width:100%}.mc .g{margin:0}.or{text-align:center;color:var(--mute);font-size:13px;margin:14px 0}
+#amsg{min-height:22px;margin:0 0 12px;color:var(--cy)}#amsg.bad{color:var(--warn)}#amsg.ok{color:var(--ok)}.l2{background:none;border:0;color:var(--mute);text-decoration:underline;padding:0}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
-<div class="top"><div class="logo" id="lg"><i></i>PROMPT_AI</div><button class="hb" id="hb">History <b id="hc">0</b></button></div>
+<div class="top"><div class="logo" id="lg"><i></i>PROMPT_AI</div><div class="hbs"><button class="hb" id="hb">History <b id="hc">0</b></button><button class="hb" id="au">Log in</button></div></div>
 <div class="app solo" id="app"><aside class="rail"><h3>Your spec sheet</h3><small>Fills in as you answer.</small><ul class="spec" id="spec"></ul></aside><main><div id="view"></div></main></div>
+<div class="am" id="am"><div class="mc"><h2 id="at">Log in</h2><p id="amsg"></p><button class="btn ghost g" id="ag">Continue with Google</button><div class="or">or use email</div>
+<input type="text" id="ae" placeholder="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (6+ characters)" autocomplete="current-password"><button class="btn" id="asub">Log in</button>
+<p style="margin:14px 0 0;text-align:center"><button class="l2" id="asw">New here? Sign up</button> &nbsp;·&nbsp; <button class="l2" id="ax">Close</button></p></div></div>
 <aside class="drawer" id="dr"></aside><div class="toast" id="ts"></div>
 <script>
 const $=s=>document.querySelector(s),esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const H={get:()=>{try{return JSON.parse(localStorage.getItem('prompt_ai')||'[]')}catch{return[]}},set:a=>{try{localStorage.setItem('prompt_ai',JSON.stringify(a.slice(0,40)))}catch{}}};
+let HK='prompt_ai';const H={get:()=>{try{return JSON.parse(localStorage.getItem(HK)||'[]')}catch{return[]}},set:a=>{try{localStorage.setItem(HK,JSON.stringify(a.slice(0,40)))}catch{}}};
 const S={idea:'',answers:[],q:null,plan:null,tab:'analysis',sel:[],cur:null},view=$('#view');let ph,lt;
-const api=async(p,b)=>{const r=await fetch('/api/'+p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Request failed');return j};
+const api=async(p,b)=>{const tk=await token();const r=await fetch('/api/'+p,{method:'POST',headers:{'content-type':'application/json',...(tk?{authorization:'Bearer '+tk}:{})},body:JSON.stringify(b)});const j=await r.json();if(r.status===401){openAuth('login',j.error)}if(!r.ok)throw new Error(j.error||'Request failed');return j};
 const toast=m=>{const t=$('#ts');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)};
 const fail=e=>{clearInterval(lt);view.innerHTML=`<div class="err"><b>Something went wrong:</b> ${esc(e.message)}<br>If this mentions the API key, fix it in .env and restart the server.</div><button class="btn" onclick="S.answers.length?next():home()">Try again</button>`};
 const when=t=>new Date(t).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
@@ -92,7 +100,7 @@ view.innerHTML=`<section class="hero"><h1>Plan the build. <span class="grad">The
 ${h.length?`<div class="recent"><h3>Pick up where you left off</h3>${h.map(x=>`<button class="rc" data-o="${x.id}"><b>${esc(x.plan?.title||x.idea)}</b><small>${esc(when(x.id))}</small></button>`).join('')}</div>`:''}</section>`;
 let i=0;clearInterval(ph);ph=setInterval(()=>{const t=$('#idea');if(t)t.placeholder=IDEAS[++i%IDEAS.length]},2800);
 view.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('#idea').value=c.textContent;$('#idea').focus()});view.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openItem(+b.dataset.o));
-$('#go').onclick=()=>{const v=$('#idea').value.trim();if(v.length<5)return $('#idea').focus();clearInterval(ph);S.idea=v;spec();next()}}
+$('#go').onclick=()=>{const v=$('#idea').value.trim();if(v.length<5)return $('#idea').focus();if(sb&&!USER){sessionStorage.setItem('pending_idea',v);return openAuth('signup','Please sign up or log in to start planning. It only takes a moment.')}clearInterval(ph);S.idea=v;spec();next()}}
 function loader(msgs){view.innerHTML='<div class="load"><div class="pulse"><i></i><i></i><i></i></div><h2 id="lm"></h2></div>';let i=0;const f=()=>{const e=$('#lm');if(e){e.style.animation='none';e.offsetHeight;e.style.animation='';e.textContent=msgs[i++%msgs.length]}};f();clearInterval(lt);lt=setInterval(f,2600)}
 async function next(){loader(['Reading your idea…','Thinking of the next question…','Finding what you haven\'t considered…']);
 try{const r=await api('next',{idea:S.idea,answers:S.answers});clearInterval(lt);if(r.done)return build();S.q=r.question;S.sel=[];ask()}catch(e){fail(e)}}
@@ -136,5 +144,19 @@ function md(){const p=S.plan;let m=`# ${p.title}\n\n${p.summary}\n\n## Feasibili
 (p.roadmap||[]).forEach(r=>m+=`\n### ${r.title} (${r.duration})\n${(r.tasks||[]).map(x=>'- '+x).join('\n')}\nDone when: ${r.outcome}\nIf ${r.fallback?.if}: ${r.fallback?.then} (changes: ${r.fallback?.changes})\n`);
 m+='\n## Prompts\n';(p.prompts||[]).forEach(x=>m+=`\n### ${x.phase}\n\`\`\`\n${x.prompt}\n\`\`\`\n`);
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([m],{type:'text/markdown'}));a.download='prompt_ai_plan.md';a.click()}
-home();
+let sb=null,USER=null,AM='login';
+async function token(){if(!sb)return '';const{data}=await sb.auth.getSession();return data.session?.access_token||''}
+function restore(){const pi=sessionStorage.getItem('pending_idea'),t=$('#idea');if(pi&&USER&&t){t.value=pi;sessionStorage.removeItem('pending_idea');toast("You're in! Press Start planning.")}}
+function setUser(u){const was=USER;USER=u;HK=u?'prompt_ai_'+u.id:'prompt_ai';$('#au').textContent=u?'Log out ('+u.email.split('@')[0]+')':'Log in';if(u){closeAuth();restore()}else if(was)home();spec()}
+async function initAuth(){try{const c=await(await fetch('/api/config')).json();if(!c.url||!c.anon){$('#au').style.display='none';return}sb=supabase.createClient(c.url,c.anon);const{data}=await sb.auth.getSession();setUser(data.session?.user||null);
+sb.auth.onAuthStateChange((_e,s)=>{const u=s?.user||null;if((u&&u.id)!==(USER&&USER.id))setUser(u)})}catch{$('#au').style.display='none'}}
+function openAuth(m,msg){AM=m;$('#am').classList.add('show');$('#at').textContent=m==='login'?'Log in':'Create your account';$('#asub').textContent=m==='login'?'Log in':'Sign up';$('#asw').textContent=m==='login'?'New here? Sign up':'Have an account? Log in';amsg(msg||'')}
+function closeAuth(){$('#am').classList.remove('show')}
+function amsg(t,k){const e=$('#amsg');e.textContent=t;e.className=k||''}
+$('#au').onclick=()=>{if(!sb)return;USER?sb.auth.signOut():openAuth('login')};
+$('#asw').onclick=()=>openAuth(AM==='login'?'signup':'login');$('#ax').onclick=closeAuth;
+$('#ag').onclick=async()=>{if(!sb)return;const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});if(error)amsg(error.message,'bad')};
+$('#asub').onclick=async()=>{if(!sb)return;const email=$('#ae').value.trim(),password=$('#ap').value;if(!email||password.length<6)return amsg('Enter your email and a password of at least 6 characters.','bad');
+$('#asub').disabled=true;try{if(AM==='signup'){const{data,error}=await sb.auth.signUp({email,password});if(error)amsg(error.message,'bad');else if(!data.session)amsg('Almost done! Check your email to confirm, then log in.','ok')}else{const{error}=await sb.auth.signInWithPassword({email,password});if(error)amsg(error.message,'bad')}}finally{$('#asub').disabled=false}};
+initAuth().finally(()=>{home();restore()});
 </script></body></html>
