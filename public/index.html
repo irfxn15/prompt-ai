@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROMPT_AI: plan any build, then paste the prompts</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080e24;--card:rgba(20,30,70,.62);--line:rgba(255,255,255,.1);--ice:#f2f5ff;--mute:#9aa8d6;--hi:#ffd84d;--cy:#5ee0ff;--ink:#080e24;--warn:#ff9d7a;--ok:#7ef0c0}
+*{box-sizing:border-box}html,body{margin:0}
+body{font:16px/1.6 Figtree,system-ui,sans-serif;color:var(--ice);min-height:100vh;background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,var(--bg);background-attachment:fixed;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;z-index:-1;animation:fl 18s ease-in-out infinite alternate}
+.o1{width:520px;height:520px;background:#2b4fe0;top:-140px;right:-80px}.o2{width:420px;height:420px;background:#7a3cf0;bottom:-120px;left:-100px;animation-delay:-6s;opacity:.35}.o3{width:300px;height:300px;background:#0fb5d6;top:45%;left:48%;opacity:.18;animation-delay:-11s}
+@keyframes fl{to{transform:translate(60px,40px) scale(1.15)}}
+h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif;margin:0;font-weight:700;letter-spacing:-.015em}
+button{font:inherit;color:inherit;cursor:pointer}:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.top{max-width:1100px;margin:0 auto;padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font:800 21px 'Bricolage Grotesque';display:flex;gap:10px;align-items:center;cursor:pointer}.logo i{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--hi),var(--cy));display:block;animation:spin 8s linear infinite}
+@keyframes spin{50%{border-radius:50%}}
+.hb{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;backdrop-filter:blur(8px)}.hb:hover{border-color:var(--cy)}.hb b{color:var(--hi)}
+.app{display:grid;grid-template-columns:280px 1fr;gap:36px;max-width:1100px;margin:0 auto;padding:12px 24px 80px}
+.app.solo{grid-template-columns:1fr;max-width:820px}.app.solo .rail{display:none}
+.rail,.box,.drawer{background:var(--card);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(10px)}
+.rail{position:sticky;top:20px;align-self:start;padding:18px}.rail h3{font-size:16px}.rail small{color:var(--mute)}
+.spec{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:12px}.spec li{font-size:14px;padding-bottom:12px;border-bottom:1px solid var(--line);animation:up .5s both}.spec li:last-child{border:0}
+.spec b{display:block;color:var(--mute);font-weight:500;font-size:12.5px}
+@keyframes up{from{opacity:0;transform:translateY(14px)}}
+.hero{text-align:center;padding-top:30px;animation:up .6s both}.hero h1{font-size:clamp(34px,5.2vw,58px);line-height:1.06;margin:0 auto;max-width:16ch}
+.grad{background:linear-gradient(90deg,var(--hi),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--mute);max-width:54ch;font-size:18px;margin:18px auto 28px}
+textarea,input[type=text]{width:100%;background:rgba(8,14,36,.7);border:1px solid var(--line);border-radius:14px;color:var(--ice);font:inherit;padding:15px 18px;resize:vertical;transition:.2s}
+textarea:focus,input[type=text]:focus{border-color:var(--cy);box-shadow:0 0 0 4px rgba(94,224,255,.12);outline:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}.chip{background:none;border:1px dashed var(--mute);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--mute);transition:.2s}.chip:hover{color:var(--ink);background:var(--cy);border-color:var(--cy);transform:translateY(-2px)}
+.btn{background:linear-gradient(90deg,var(--hi),#ffb347);color:var(--ink);border:0;border-radius:12px;padding:13px 26px;font-weight:700;margin-top:16px;transition:.2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,216,77,.3)}.btn.ghost{background:transparent;color:var(--ice);border:1px solid var(--line);margin-right:8px;font-weight:500}.btn.ghost:hover{border-color:var(--mute);box-shadow:none}
+.recent{margin-top:44px;text-align:left}.recent h3{font-size:15px;color:var(--mute);margin-bottom:10px;font-weight:500}
+.rc{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:10px;transition:.2s}.rc:hover{border-color:var(--cy);transform:translateX(6px)}.rc small{color:var(--mute);display:block}
+.dots{display:flex;gap:6px;margin-bottom:24px}.dots i{height:5px;flex:1;border-radius:3px;background:var(--line);transition:.4s}.dots i.on{background:linear-gradient(90deg,var(--hi),var(--cy))}
+.q{animation:up .45s both}.q small{color:var(--cy);font-weight:600}.q h2{font-size:clamp(24px,3vw,34px);line-height:1.2;margin-top:4px}.why{color:var(--mute);margin:8px 0 22px;max-width:60ch}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:16px}
+.opt{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px 14px 44px;position:relative;transition:.2s;animation:up .4s both}
+.opt:before{content:"";position:absolute;left:16px;top:50%;width:16px;height:16px;margin-top:-8px;border:2px solid var(--mute);border-radius:50%;transition:.2s}
+.opt:hover{border-color:var(--cy);transform:translateY(-3px)}.opt.on{background:rgba(255,216,77,.12);border-color:var(--hi)}.opt.on:before{background:var(--hi);border-color:var(--hi);box-shadow:inset 0 0 0 3px var(--bg)}
+.load{padding:50px 0;text-align:center}.load h2{font-size:22px;color:var(--mute);margin-top:26px;animation:up .5s both}
+.pulse{position:relative;width:90px;height:90px;margin:0 auto}.pulse i{position:absolute;inset:0;border:2px solid var(--cy);border-radius:50%;animation:pl 2.4s ease-out infinite}.pulse i:nth-child(2){animation-delay:.8s;border-color:var(--hi)}.pulse i:nth-child(3){animation-delay:1.6s}
+@keyframes pl{from{transform:scale(.2);opacity:1}to{transform:scale(1.2);opacity:0}}
+.rh{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap}.rh small{color:var(--mute)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:18px 0;padding:5px;background:var(--card);border:1px solid var(--line);border-radius:14px;width:fit-content}
+.tab{background:none;border:0;padding:9px 16px;color:var(--mute);border-radius:10px;transition:.2s}.tab:hover{color:var(--ice)}.tab.on{background:linear-gradient(90deg,var(--hi),#ffb347);color:var(--ink);font-weight:700}
+#pane{animation:up .4s both}
+.box{padding:18px;margin-bottom:14px;transition:.25s}.box h3{font-size:18px;margin-bottom:6px}.box small{color:var(--mute)}
+.pill{display:inline-block;background:rgba(255,216,77,.14);color:var(--hi);border-radius:999px;padding:2px 11px;font-size:13px;font-weight:600;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:14px}.grid .box{margin:0}.lift:hover{transform:translateY(-5px);border-color:var(--cy);box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.stats{display:grid;grid-template-columns:200px repeat(3,1fr);gap:14px;margin-bottom:14px}.stat{text-align:center}.stat b{display:block;font:800 40px 'Bricolage Grotesque';color:var(--cy)}.stat span{color:var(--mute);font-size:14px}
+.ring{position:relative;width:120px;margin:0 auto}.ring svg{transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:9;stroke-linecap:round}.ring .bg{stroke:var(--line)}.ring .fg{transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 24px 'Bricolage Grotesque'}
+.ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font:800 17px 'Bricolage Grotesque';color:var(--ink);background:linear-gradient(135deg,var(--hi),var(--cy));margin-bottom:10px}
+.pbar{height:8px;background:var(--line);border-radius:4px;margin-bottom:18px;overflow:hidden}.pbar div{height:100%;background:linear-gradient(90deg,var(--ok),var(--cy));width:0;transition:width .6s}
+.route{position:relative;padding-left:46px}.route:before{content:"";position:absolute;left:15px;top:10px;bottom:10px;width:2px;background:linear-gradient(var(--hi),var(--cy),transparent)}
+.stn{position:relative;animation:up .5s both}.stn .num{position:absolute;left:-46px;top:14px;width:32px;height:32px;border-radius:50%;background:var(--bg);border:2px solid var(--hi);display:grid;place-items:center;font-weight:700;font-size:14px;transition:.3s}.stn.dn .num{background:var(--ok);border-color:var(--ok);color:var(--ink)}
+.sh{display:flex;justify-content:space-between;gap:10px;cursor:pointer;align-items:center}.sh .chev{transition:.3s;color:var(--mute)}.stn.open .chev{transform:rotate(180deg)}.sb{display:none;margin-top:10px}.stn.open .sb{display:block;animation:up .35s both}
+ul{margin:8px 0;padding-left:20px}.alt{margin-top:10px;border:1px solid rgba(255,157,122,.4);border-radius:12px;padding:12px;display:none;background:rgba(255,157,122,.06)}.alt.show{display:block;animation:up .3s both}
+.link{background:none;border:0;color:var(--warn);padding:0;text-decoration:underline;margin-right:14px}.dnb{background:none;border:1px solid var(--line);border-radius:8px;padding:4px 12px;font-size:14px}.stn.dn .dnb{background:var(--ok);color:var(--ink);border-color:var(--ok)}
+pre{white-space:pre-wrap;background:rgba(4,8,24,.85);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13.5px;max-height:320px;overflow:auto}
+.err{border:1px solid var(--warn);background:rgba(255,157,122,.08);border-radius:14px;padding:14px;color:var(--warn)}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(380px,92vw);z-index:20;padding:20px;transform:translateX(105%);transition:.35s;overflow:auto;border-radius:16px 0 0 16px;background:#0d1535}.drawer.show{transform:none}
+.drawer h2{font-size:22px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}.hi{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.hi small{color:var(--mute);display:block}.hi button{margin-top:8px;margin-right:6px;font-size:14px}
+.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,80px);background:var(--ok);color:var(--ink);padding:10px 20px;border-radius:999px;font-weight:600;transition:.3s;z-index:30}.toast.show{transform:translate(-50%,0)}
+@media(max-width:860px){.app{grid-template-columns:1fr}.rail{position:static}.stats{grid-template-columns:1fr 1fr}.stats .ringc{grid-column:1/-1}}
+@media print{body{background:#fff;color:#000}.orb,.top,.rail,.tabs,.btn,.link,.dnb,.drawer{display:none}.alt,.sb{display:block}.box{break-inside:avoid;border-color:#999;background:#fff}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div class="top"><div class="logo" id="lg"><i></i>PROMPT_AI</div><button class="hb" id="hb">History <b id="hc">0</b></button></div>
+<div class="app solo" id="app"><aside class="rail"><h3>Your spec sheet</h3><small>Fills in as you answer.</small><ul class="spec" id="spec"></ul></aside><main><div id="view"></div></main></div>
+<aside class="drawer" id="dr"></aside><div class="toast" id="ts"></div>
+<script>
+const $=s=>document.querySelector(s),esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const H={get:()=>{try{return JSON.parse(localStorage.getItem('prompt_ai')||'[]')}catch{return[]}},set:a=>{try{localStorage.setItem('prompt_ai',JSON.stringify(a.slice(0,40)))}catch{}}};
+const S={idea:'',answers:[],q:null,plan:null,tab:'analysis',sel:[],cur:null},view=$('#view');let ph,lt;
+const api=async(p,b)=>{const r=await fetch('/api/'+p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Request failed');return j};
+const toast=m=>{const t=$('#ts');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)};
+const fail=e=>{clearInterval(lt);view.innerHTML=`<div class="err"><b>Something went wrong:</b> ${esc(e.message)}<br>If this mentions the API key, fix it in .env and restart the server.</div><button class="btn" onclick="S.answers.length?next():home()">Try again</button>`};
+const when=t=>new Date(t).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
+function spec(){$('#app').classList.toggle('solo',!S.idea);$('#spec').innerHTML=(S.idea?`<li><b>Idea</b>${esc(S.idea)}</li>`:'')+S.answers.map(a=>`<li><b>${esc(a.q)}</b>${esc(a.a)}</li>`).join('');$('#hc').textContent=H.get().length}
+function saveCur(){const h=H.get().filter(x=>x.id!==S.cur.id);h.unshift(S.cur);H.set(h);spec()}
+function openItem(id){const it=H.get().find(x=>x.id===id);if(!it)return;clearInterval(ph);S.cur=it;S.idea=it.idea;S.answers=it.answers;S.plan=it.plan;S.tab='analysis';spec();result();drawer(false)}
+function drawer(show){const d=$('#dr'),h=H.get();d.innerHTML=`<h2>History <button class="btn ghost" id="cl" style="margin:0">Close</button></h2>`+(h.length?h.map(x=>`<div class="hi"><b>${esc(x.plan?.title||x.idea)}</b><small>${esc(when(x.id))} · ${x.answers.length} answers</small><button class="btn ghost" data-o="${x.id}">Open</button><button class="btn ghost" data-d="${x.id}">Delete</button></div>`).join(''):'<p style="color:var(--mute)">Nothing yet. Finished plans are saved here automatically.</p>');
+d.classList.toggle('show',show);$('#cl').onclick=()=>drawer(false);d.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openItem(+b.dataset.o));d.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{H.set(H.get().filter(x=>x.id!==+b.dataset.d));spec();drawer(true)})}
+$('#hb').onclick=()=>drawer(true);$('#lg').onclick=()=>home();
+const IDEAS=['A virtual try-on app for online shoppers','A WhatsApp chatbot for a local clinic','A study assistant that turns notes into quizzes','An AI agent that tracks job listings for me','A voice assistant for farmers in regional languages'];
+function home(){clearInterval(lt);S.idea='';S.answers=[];S.plan=null;S.cur=null;spec();const h=H.get().slice(0,3);
+view.innerHTML=`<section class="hero"><h1>Plan the build. <span class="grad">Then paste the prompts.</span></h1><p>Tell us what you want to make. We ask the questions you didn't know to ask, then hand you the stack, costs, roadmap and ready-to-paste prompts.</p>
+<textarea id="idea" rows="3" placeholder="${esc(IDEAS[0])}"></textarea><div class="chips">${IDEAS.map(i=>`<button class="chip">${esc(i)}</button>`).join('')}</div><button class="btn" id="go">Start planning →</button>
+${h.length?`<div class="recent"><h3>Pick up where you left off</h3>${h.map(x=>`<button class="rc" data-o="${x.id}"><b>${esc(x.plan?.title||x.idea)}</b><small>${esc(when(x.id))}</small></button>`).join('')}</div>`:''}</section>`;
+let i=0;clearInterval(ph);ph=setInterval(()=>{const t=$('#idea');if(t)t.placeholder=IDEAS[++i%IDEAS.length]},2800);
+view.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('#idea').value=c.textContent;$('#idea').focus()});view.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openItem(+b.dataset.o));
+$('#go').onclick=()=>{const v=$('#idea').value.trim();if(v.length<5)return $('#idea').focus();clearInterval(ph);S.idea=v;spec();next()}}
+function loader(msgs){view.innerHTML='<div class="load"><div class="pulse"><i></i><i></i><i></i></div><h2 id="lm"></h2></div>';let i=0;const f=()=>{const e=$('#lm');if(e){e.style.animation='none';e.offsetHeight;e.style.animation='';e.textContent=msgs[i++%msgs.length]}};f();clearInterval(lt);lt=setInterval(f,2600)}
+async function next(){loader(['Reading your idea…','Thinking of the next question…','Finding what you haven\'t considered…']);
+try{const r=await api('next',{idea:S.idea,answers:S.answers});clearInterval(lt);if(r.done)return build();S.q=r.question;S.sel=[];ask()}catch(e){fail(e)}}
+function ask(){const q=S.q,n=S.answers.length;
+view.innerHTML=`<div class="dots">${Array.from({length:10},(_,i)=>`<i class="${i<=n?'on':''}"></i>`).join('')}</div><div class="q"><small>QUESTION ${n+1}</small><h2>${esc(q.text)}</h2><p class="why">${esc(q.why)}</p>
+<div class="opts">${(q.options||[]).map((o,i)=>`<button class="opt" style="animation-delay:${i*60}ms" data-i="${i}">${esc(o)}</button>`).join('')}</div>
+<input type="text" id="own" placeholder="Or describe it in your own words"><div><button class="btn ghost" id="skip">Let PROMPT_AI decide</button><button class="btn" id="ok">Continue →</button></div></div>`;
+view.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(q.type==='multi'){b.classList.toggle('on');S.sel=[...view.querySelectorAll('.opt.on')].map(x=>q.options[x.dataset.i])}else{view.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.sel=[q.options[b.dataset.i]]}});
+const done=a=>{S.answers.push({q:q.text,a});spec();next()};
+$('#skip').onclick=()=>done('PROMPT_AI decides');
+$('#ok').onclick=()=>{const t=$('#own').value.trim(),a=[...S.sel,...(t?[t]:[])].join(', ');if(!a)return $('#own').focus();done(a)}}
+async function build(){loader(['Analysing feasibility…','Choosing your tech stack…','Drawing the roadmap…','Writing paste-ready prompts…','Almost there…']);
+try{S.plan=await api('plan',{idea:S.idea,answers:S.answers});clearInterval(lt);S.tab='analysis';S.cur={id:Date.now(),idea:S.idea,answers:S.answers,plan:S.plan,done:{}};saveCur();result()}catch(e){fail(e)}}
+const TABS=[['analysis','Analysis'],['stack','Tech stack'],['roadmap','Roadmap'],['prompts','Prompts'],['export','Export']];
+function result(){view.innerHTML=`<div class="rh"><div><small>${esc(when(S.cur?.id||Date.now()))}</small><h1 style="font-size:clamp(28px,4vw,44px)">${esc(S.plan.title||S.idea)}</h1></div></div><div class="tabs">${TABS.map(([k,l])=>`<button class="tab ${S.tab===k?'on':''}" data-k="${k}">${l}</button>`).join('')}</div><div id="pane"></div>`;
+view.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.tab=b.dataset.k;result()});pane()}
+const VP={Realistic:[85,'var(--ok)'],Stretch:[55,'var(--hi)'],'Research-grade':[25,'var(--warn)']};
+function count(){document.querySelectorAll('[data-n]').forEach(e=>{const n=+e.dataset.n;let i=0;const t=setInterval(()=>{e.textContent=++i;if(i>=n)clearInterval(t)},70)})}
+function pane(){const p=S.plan,el=$('#pane'),t=S.tab,dn=S.cur?.done||{};
+if(t==='analysis'){const f=p.feasibility||{},c=p.costs||{},[pc,col]=VP[f.verdict]||[50,'var(--cy)'],C=2*Math.PI*52;
+el.innerHTML=`<div class="stats"><div class="box ringc"><div class="ring"><svg width="120" height="120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="fg" cx="60" cy="60" r="52" stroke="${col}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><b>${pc}%</b></div><p style="text-align:center;margin:8px 0 0"><span class="pill">${esc(f.verdict)}</span></p></div>
+<div class="box stat"><b data-n="${(p.roadmap||[]).length}">0</b><span>roadmap phases</span></div><div class="box stat"><b data-n="${(p.stack||[]).length}">0</b><span>tech choices</span></div><div class="box stat"><b data-n="${(p.prompts||[]).length}">0</b><span>ready prompts</span></div></div>
+<div class="box"><p>${esc(p.summary)}</p></div><div class="box"><h3>Feasibility</h3><p>${esc(f.notes)}</p></div>
+<div class="grid"><div class="box lift"><h3>Strengths</h3><ul>${(p.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div class="box lift"><h3>Risks</h3><ul>${(p.risks||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+<div class="box lift"><h3>Cost</h3><p><b>Build:</b> ${esc(c.build)}<br><b>Monthly:</b> ${esc(c.monthly)}</p><p>${esc(c.notes)}</p></div></div>`;
+setTimeout(()=>$('#fg')&&($('#fg').style.strokeDashoffset=C*(1-pc/100)),80);count()}
+if(t==='stack')el.innerHTML=`<div class="grid">${(p.stack||[]).map((s,i)=>`<div class="box lift" style="animation:up .5s ${i*70}ms both"><div class="ico">${esc((s.layer||'?')[0].toUpperCase())}</div><small>${esc(s.layer)}</small><h3>${esc(s.choice)}</h3><p>${esc(s.why)}</p><p><span class="pill">${esc(s.cost)}</span></p><p><b>Instead:</b> ${esc(s.alternative)}</p></div>`).join('')}</div>`;
+if(t==='roadmap'){const r=p.roadmap||[],d=r.filter((_,i)=>dn[i]).length;
+el.innerHTML=`<small style="color:var(--mute)">${d} of ${r.length} phases done</small><div class="pbar"><div id="pb" style="width:${r.length?d/r.length*100:0}%"></div></div><div class="route">${r.map((x,i)=>`<div class="stn box ${i===0?'open':''} ${dn[i]?'dn':''}" style="animation-delay:${i*80}ms"><div class="num">${i+1}</div><div class="sh"><div><h3>${esc(x.title)}</h3><span class="pill">${esc(x.duration)}</span></div><span class="chev">▾</span></div>
+<div class="sb"><ul>${(x.tasks||[]).map(y=>`<li>${esc(y)}</li>`).join('')}</ul><p><b>Done when:</b> ${esc(x.outcome)}</p><button class="link" data-a="${i}">Stuck here? See alternatives</button><button class="dnb" data-m="${i}">${dn[i]?'✓ Done':'Mark done'}</button>
+<div class="alt" id="alt${i}"><b>If:</b> ${esc(x.fallback?.if)}<br><b>Try:</b> ${esc(x.fallback?.then)}<br><b>What changes:</b> ${esc(x.fallback?.changes)}</div></div></div>`).join('')}</div>`;
+el.querySelectorAll('.sh').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+el.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>$('#alt'+b.dataset.a).classList.toggle('show'));
+el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{if(!S.cur)return;const i=b.dataset.m;S.cur.done=S.cur.done||{};S.cur.done[i]=!S.cur.done[i];saveCur();const o=el.querySelectorAll('.stn.open');pane();o.forEach(x=>{})})}
+if(t==='prompts')el.innerHTML=(p.prompts||[]).map((x,i)=>`<div class="box"><h3>${esc(x.phase)}</h3><pre id="pr${i}">${esc(x.prompt)}</pre><button class="btn" data-c="${i}">Copy prompt</button></div>`).join('');
+if(t==='export')el.innerHTML=`<div class="box"><h3>Take it with you</h3><p>Download the full plan or save it as a PDF.</p><button class="btn ghost" id="md">Download Markdown</button><button class="btn ghost" id="pdf">Save as PDF</button><button class="btn" id="again">Plan something else</button></div>`;
+el.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText($('#pr'+b.dataset.c).textContent);toast('Prompt copied')});
+if(t==='export'){$('#md').onclick=md;$('#pdf').onclick=()=>{const keep=S.tab,h=[];for(const [k] of TABS.slice(0,4)){S.tab=k;pane();h.push($('#pane').innerHTML)}S.tab=keep;$('#pane').innerHTML=h.join('');document.querySelectorAll('.sb').forEach(x=>x.style.display='block');setTimeout(()=>{print();pane()},100)};$('#again').onclick=home}}
+function md(){const p=S.plan;let m=`# ${p.title}\n\n${p.summary}\n\n## Feasibility: ${p.feasibility?.verdict}\n${p.feasibility?.notes}\n\n## Cost\nBuild: ${p.costs?.build}\nMonthly: ${p.costs?.monthly}\n${p.costs?.notes}\n\n## Tech stack\n`;
+(p.stack||[]).forEach(s=>m+=`- **${s.layer}: ${s.choice}** (${s.cost}). ${s.why} Alternative: ${s.alternative}\n`);m+='\n## Roadmap\n';
+(p.roadmap||[]).forEach(r=>m+=`\n### ${r.title} (${r.duration})\n${(r.tasks||[]).map(x=>'- '+x).join('\n')}\nDone when: ${r.outcome}\nIf ${r.fallback?.if}: ${r.fallback?.then} (changes: ${r.fallback?.changes})\n`);
+m+='\n## Prompts\n';(p.prompts||[]).forEach(x=>m+=`\n### ${x.phase}\n\`\`\`\n${x.prompt}\n\`\`\`\n`);
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([m],{type:'text/markdown'}));a.download='prompt_ai_plan.md';a.click()}
+home();
+</script></body></html>
